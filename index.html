@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KI vs. Mensch – Unterrichtsfeedback (Dashboard)</title>
+
+  <!-- Fonts (optional) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Serif+4:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+
+  <!-- D3 (global) -->
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <!-- App (ES module) -->
+  <script type="module" src="js/app.js"></script>
+</head>
+<body>
+  <div class="page">
+
+    <header class="hero">
+      <div class="hero-top">
+        <div>
+          <h1>Validität KI-gestützter Ratings im Vergleich zu menschlichen Beobachtungen</h1>
+          <p class="subtitle">
+            Dashboard zur Auswertung der transkriptbasierten Ratings (IBBW Tiefenstrukturen) entlang der Forschungsfragen:
+            Eignung auf Indikator- und Itemebene sowie Vergleich von KI und Mensch.
+          </p>
+        </div>
+      </div>
+
+      <div class="meta">
+        <div class="meta-card">
+          <div class="meta-label">Skala</div>
+          <div class="meta-value">Likert 1–4 (99/n.b. ausgeschlossen)</div>
+        </div>
+        <div class="meta-card">
+          <div class="meta-label">Basisdimensionen</div>
+          <div class="meta-value">KA · KU · SK</div>
+        </div>
+      </div>
+    </header>
+
+    <div id="tooltip"></div>
+
+    <!-- =====================================================
+         Forschungsfrage 1
+    ====================================================== -->
+    <section class="section" id="rq1">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Forschungsfrage 1 · Item- und Indikator-Validität</h2>
+          <p class="section-desc">
+            Welche Items und Indikatoren lassen sich auf Basis von Transkripten durch die KI sinnvoll bewerten?
+          </p>
+        </div>
+      </div>
+
+      <div class="grid two">
+        <article class="card">
+          <h3>1.1 Übersicht auf Itemebene</h3>
+          <p class="note">
+            Gestapelte Balken zeigen pro Item die Anzahl der Indikatoren, die als <strong>geeignet</strong>,
+            <strong>bedingt geeignet</strong> oder <strong>nicht geeignet</strong> eingestuft wurden.
+          </p>
+          <div class="controls">
+            <label>
+              Basisdimension
+              <select id="dim-select-eignung"></select>
+            </label>
+          </div>
+          <svg id="svg-eignung-items" class="chart"></svg>
+        </article>
+
+        <article class="card">
+          <h3>1.2 Indikatoransicht</h3>
+          <p class="note">
+            Jeder Punkt steht für einen Indikator. Die y-Achse zeigt den Anteil der 99-Bewertungen
+            (nicht beurteilbar). So werden problematische Indikatoren mit hohem 99-Anteil sichtbar.
+          </p>
+          <div class="controls">
+            <label>
+              Basisdimension
+              <select id="dim-select-indicator"></select>
+            </label>
+            <label>
+              Item
+              <select id="item-select-indicator"></select>
+            </label>
+          </div>
+          <svg id="svg-indikatoren" class="chart"></svg>
+        </article>
+      </div>
+    </section>
+
+    <!-- =====================================================
+         Forschungsfrage 2
+    ====================================================== -->
+    <section class="section" id="rq2">
+      <div class="section-head">
+        <div>
+          <h2 class="section-title">Forschungsfrage 2 · Vergleich Mensch und KI</h2>
+          <p class="section-desc">
+            Wie unterscheiden sich KI-Bewertungen im Vergleich zu menschlichen Ratings auf Itemebene?
+          </p>
+        </div>
+      </div>
+
+      <div class="grid">
+        <article class="card">
+          <h3>2.1 Mittelwerte pro Item</h3>
+          <p class="note">
+            Punkteplot der Mittelwerte (Mensch vs. KI) pro Item. Optionaler Filter: nur Items ohne
+            „nicht geeignet“-Indikatoren.
+          </p>
+          <div class="controls">
+            <label>
+              Basisdimension
+              <select id="dim-select-compare"></select>
+            </label>
+            <label>
+              <input type="checkbox" id="toggle-human" checked>
+              Mensch anzeigen
+            </label>
+            <label>
+              <input type="checkbox" id="toggle-ki" checked>
+              KI anzeigen
+            </label>
+            <label>
+              <input type="checkbox" id="filter-suitable" checked>
+              Nur ohne „nicht geeignet“
+            </label>
+          </div>
+          <svg id="svg-compare" class="chart"></svg>
+        </article>
+
+        <article class="card">
+          <h3>2.2 Scores pro Beobachtung</h3>
+          <p class="note">
+            Für das gewählte Item: Balkendiagramm über alle Beobachtungen. Pro Beobachtung stehen
+            <strong>Mensch</strong> und <strong>KI</strong> direkt nebeneinander; 99/n.b. wird ausgeschlossen.
+          </p>
+          <div class="controls">
+            <label>
+              Item
+              <select id="item-select-scores"></select>
+            </label>
+          </div>
+          <svg id="svg-item-scores" class="chart"></svg>
+        </article>
+
+
+        <article class="card">
+          <h3>2.3 Basisdimensionen zusammenfassung</h3>
+          <p class="note">
+            Aggregierte Kennwerte auf Basisdimensionsebene (gewichtete Mittelwerte nach <strong>n Paaren</strong>).
+            Dargestellt = Mittelwerte Mensch vs. KI; in der Zeile wird zusätzlich <strong>gleich</strong> (in %) und <strong>MAD</strong> ausgewiesen.
+          </p>
+          <svg id="svg-basis-summary" class="chart chart-tall"></svg>
+        </article>
+
+      </div>
+    </section>
+
+    <div class="footer">
+      Hinweis: Darstellung optimiert für wissenschaftliche Berichte (Print-Ansicht unterstützt).
+    </div>
+
+  </div>
+</body>
+</html>
