@@ -3,13 +3,16 @@
 // Erwartet: indicatorData (Array), basisdimensionen (Array)
 // Nutzt globales d3 (wird in index.html geladen).
 
-export function initIndicatorHeatmap({ indicatorData, basisdimensionen }) {
+export function initIndicatorHeatmap({ indicatorData, itemEignungData, basisdimensionen }) {
   if (typeof indicatorData === "undefined" || indicatorData.length === 0) {
     return;
   }
 
   const svg = d3.select("#svg-indikatoren");
   const tooltip = d3.select("#tooltip");
+
+  // Falls dieses Chart auf einer Seite ohne das SVG gerendert wird, sauber abbrechen
+  if (svg.empty()) return;
 
   const margin = { top: 50, right: 180, bottom: 80, left: 80 };
   const width = 1200 - margin.left - margin.right;
@@ -34,8 +37,11 @@ g.append("rect")
   .attr("stroke-width", 1);
 
 
-  // Items (Zeilen) in der Reihenfolge aus itemEignungData
-  const itemOrder = itemEignungData.map(d => d.itemCode);
+  // Items (Zeilen) in der Reihenfolge aus itemEignungData (wird aus app.js übergeben).
+  // Fallback: Reihenfolge aus den Indikatoren ableiten.
+  const itemOrder = Array.isArray(itemEignungData)
+    ? itemEignungData.map(d => d.itemCode)
+    : Array.from(new Set(indicatorData.map(d => d.itemCode)));
 
   // Indikatoren pro Item sortieren und Spaltenindex vergeben
   const processedIndicators = [];

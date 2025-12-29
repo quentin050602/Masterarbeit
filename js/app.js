@@ -20,8 +20,8 @@ const basisdimensionen = Array.from(new Set(itemEignungData.map(d => d.basisdime
 
 document.addEventListener("DOMContentLoaded", () => {
   initEignungChart({ itemEignungData, basisdimensionen });
-  initCompareChart({ itemCompareData, basisdimensionen });
-  initIndicatorHeatmap({ indicatorData, basisdimensionen });
+  initCompareChart({ itemCompareData, itemEignungData, basisdimensionen });
+  initIndicatorHeatmap({ indicatorData, itemEignungData, basisdimensionen });
   initItemScoresPerObservationChart({ itemObservationScores });
   initBasisdimensionSummaryChart({ itemCompareData });
 });

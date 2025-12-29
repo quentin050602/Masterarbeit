@@ -3,9 +3,12 @@
 // Erwartet: itemCompareData (Array), basisdimensionen (Array)
 // Nutzt globales d3 (wird in index.html geladen).
 
-export function initCompareChart({ itemCompareData, basisdimensionen }) {
+export function initCompareChart({ itemCompareData, itemEignungData, basisdimensionen }) {
   const svg = d3.select("#svg-compare");
   const tooltip = d3.select("#tooltip");
+
+  // Falls dieses Chart auf einer Seite ohne das SVG gerendert wird, sauber abbrechen
+  if (svg.empty()) return;
 
   const margin = { top: 50, right: 40, bottom: 80, left: 70 };
   const width = 1200 - margin.left - margin.right;
@@ -141,14 +144,16 @@ const dotsHumanGroup = g.append("g").attr("class", "dots-human");
 
     const filterSuitable = filterSuitableCheckbox.checked;
     if (filterSuitable) {
-      const suitableItems = itemEignungData
-        .filter(d =>
-          d.basisdimension === selectedDimension &&
-          d.notSuitable === 0
-        )
-        .map(d => d.itemCode);
+      // itemEignungData wird aus app.js übergeben (nicht als globale Variable voraussetzen).
+      if (!Array.isArray(itemEignungData)) {
+        console.warn("[compareChart] itemEignungData fehlt – Filter 'nur geeignete Items' wird ignoriert.");
+      } else {
+        const suitableItems = itemEignungData
+          .filter(d => d.basisdimension === selectedDimension && d.notSuitable === 0)
+          .map(d => d.itemCode);
 
-      dimData = dimData.filter(d => suitableItems.includes(d.itemCode));
+        dimData = dimData.filter(d => suitableItems.includes(d.itemCode));
+      }
     }
 
     xScale.domain(dimData.map(d => d.itemCode));
