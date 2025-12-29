@@ -1,22 +1,21 @@
 // js/charts/indicatorHeatmap.js
 // Forschungsfrage 3: Indikatoren (Heatmap)
-// Erwartet: indicatorData (Array), itemEignungData (Array|optional), basisdimensionen (Array)
+// Erwartet: indicatorData (Array), basisdimensionen (Array)
 // Nutzt globales d3 (wird in index.html geladen).
 
 export function initIndicatorHeatmap({ indicatorData, itemEignungData, basisdimensionen }) {
-  if (!Array.isArray(indicatorData) || indicatorData.length === 0) return;
+  if (typeof indicatorData === "undefined" || indicatorData.length === 0) {
+    return;
+  }
 
   const svg = d3.select("#svg-indikatoren");
-  if (svg.empty()) return;
-
   const tooltip = d3.select("#tooltip");
-
-  // Reset
-  svg.selectAll("*").remove();
 
   const margin = { top: 50, right: 180, bottom: 80, left: 80 };
   const width = 1200 - margin.left - margin.right;
   const height = 420 - margin.top - margin.bottom;
+
+  svg.selectAll("*").remove();
 
   svg.attr(
     "viewBox",
@@ -26,34 +25,35 @@ export function initIndicatorHeatmap({ indicatorData, itemEignungData, basisdime
   const g = svg.append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-  // Rahmen
-  g.append("rect")
-    .attr("x", 0)
-    .attr("y", 0)
-    .attr("width", width)
-    .attr("height", height)
-    .attr("fill", "none")
-    .attr("stroke", "#cfd6e4")
-    .attr("stroke-width", 1);
+// Einheitlicher Rahmen (Plot-Frame)
+g.append("rect")
+  .attr("x", 0)
+  .attr("y", 0)
+  .attr("width", width)
+  .attr("height", height)
+  .attr("fill", "none")
+  .attr("stroke", "#cfd6e4")
+  .attr("stroke-width", 1);
 
-  // Item-Reihenfolge: bevorzugt aus itemEignungData, sonst aus indicatorData
-  const itemOrder = Array.isArray(itemEignungData)
+
+  // Items (Zeilen) in der Reihenfolge aus itemEignungData
+  const itemOrder = (Array.isArray(itemEignungData) && itemEignungData.length)
     ? itemEignungData.map(d => d.itemCode)
-    : Array.from(new Set(indicatorData.map(d => d.itemCode)));
+    : Array.from(new Set(indicatorData.map(d => d.itemCode))).sort(d3.ascending);
 
   // Indikatoren pro Item sortieren und Spaltenindex vergeben
   const processedIndicators = [];
   const byItem = d3.group(indicatorData, d => d.itemCode);
 
-  byItem.forEach((list) => {
+  byItem.forEach((list, itemCode) => {
     list.sort((a, b) => Number(a.indicatorId) - Number(b.indicatorId));
     list.forEach((d, i) => {
-      d.colIndex = i + 1;
+      d.colIndex = i + 1; // 1,2,3,... innerhalb des Items
       processedIndicators.push(d);
     });
   });
 
-  const maxCols = d3.max(processedIndicators, d => d.colIndex) || 1;
+  const maxCols = d3.max(processedIndicators, d => d.colIndex);
 
   const xScale = d3.scaleBand()
     .domain(d3.range(1, maxCols + 1).map(String))
@@ -65,7 +65,7 @@ export function initIndicatorHeatmap({ indicatorData, itemEignungData, basisdime
     .range([0, height])
     .padding(0.05);
 
-  // Farbskala für Anteil 99 – 5 Klassen
+  // Farbskala für Anteil 99 – 5 Klassen, passend zur Legende
   const thresholds = [5, 15, 30, 50];
   const colorRange = [
     "#e8f5e9", // <5 %
@@ -86,6 +86,7 @@ export function initIndicatorHeatmap({ indicatorData, itemEignungData, basisdime
   const yAxisGroup = g.append("g")
     .attr("class", "axis y-axis");
 
+  // Achsenticks und -beschriftungen
   xAxisGroup.call(d3.axisBottom(xScale));
   xAxisGroup.selectAll("text")
     .attr("text-anchor", "middle")
@@ -111,21 +112,27 @@ export function initIndicatorHeatmap({ indicatorData, itemEignungData, basisdime
     .attr("font-size", "0.9rem")
     .text("Items");
 
-  g.append("text")
+  const chartTitle = g.append("text")
     .attr("x", width / 2)
     .attr("y", -15)
     .attr("text-anchor", "middle")
     .attr("fill", "#222")
     .attr("font-size", "1rem")
     .attr("font-weight", "600")
-    .text("Alle Indikatoren – Heatmap nach Item und Indikator");
+    .text("Alle Indikatoren – Pixel-Heatmap nach Item und Indikator");
 
-  // Legende
+  // Legende für Farbe (Anteil 99)
   const legendColor = g.append("g")
     .attr("class", "legend legend-color")
     .attr("transform", `translate(${width + 20}, 10)`);
 
-  const colorLabels = ["<5 %", "5–<15 %", "15–<30 %", "30–<50 %", "≥50 %"];
+  const colorLabels = [
+    "<5 %",
+    "5–<15 %",
+    "15–<30 %",
+    "30–<50 %",
+    "≥50 %"
+  ];
 
   legendColor.append("text")
     .attr("x", 0)
@@ -153,7 +160,7 @@ export function initIndicatorHeatmap({ indicatorData, itemEignungData, basisdime
     .attr("y", 2)
     .text(d => d);
 
-  // Zellen
+  // Heatmap-Zellen – einheitlicher Rahmen
   g.selectAll("rect.heat-cell")
     .data(processedIndicators, d => d.itemCode + "-" + d.indicatorId)
     .enter()
@@ -185,5 +192,14 @@ export function initIndicatorHeatmap({ indicatorData, itemEignungData, basisdime
           .style("left", (event.pageX + 12) + "px")
           .style("top", (event.pageY - 28) + "px");
       })
-      .on("mouseout", () => tooltip.style("opacity", 0));
+      .on("mouseout", () => {
+        tooltip.style("opacity", 0);
+      });
 }
+
+
+// --------------------------------------------------------
+// 4) Item-Scores pro Beobachtung (Grouped Bar Chart: KI vs Mensch)
+// Auswahl: Item (KA1..KA4, KU1..KU4, SK1..SK3)
+// Pro Item: bis zu 18 Beobachtungen (z.B. Transkripte). 99 (n.b.) wird rausgefiltert.
+// --------------------------------------------------------
