@@ -8,10 +8,8 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
   if (svg.empty()) return;
 
   const tooltip = d3.select("#tooltip");
+  svg.selectAll("*").remove();
 
-  // ----------------------------
-  // Datenaufbereitung: Items + Summenzeilen je Basisdimension + Gesamt
-  // ----------------------------
   const dims = [
     "Kognitive Aktivierung",
     "Konstruktive Unterstützung",
@@ -61,8 +59,11 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
     };
   }
 
+  // ----------------------------
+  // Datenaufbereitung
+  // ----------------------------
   const rows = [];
-  const groupSpans = []; // für Hintergrund + Überschriften
+  const groupSpans = [];
 
   dims.forEach(dim => {
     const items = itemCompareData
@@ -103,32 +104,33 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
 
   const allSum = computeSummaryForRows(itemCompareData);
   rows.push({
-    basisdimension: "Basisdimensionen zusammenfassung",
+    basisdimension: "Basisdimensionen-Zusammenfassung",
     itemCode: "ALL_gesamt",
     itemLabel: "Gesamt",
     ...allSum,
     rowType: "overallSummary",
     group: "ALL",
-    key: "Basisdimensionen zusammenfassung",
-    label: "Basisdimensionen zusammenfassung"
+    key: "ALL_gesamt",
+    label: "Gesamt"
   });
 
   // ----------------------------
-  // Layout (mehr Platz, damit es wirklich lesbar ist)
+  // Layout
   // ----------------------------
   const rowH = 28;
   const innerHeight = Math.max(460, rows.length * rowH);
 
-  const margin = { top: 84, right: 300, bottom: 70, left: 360 };
+  const margin = { top: 96, right: 300, bottom: 70, left: 360 };
   const width = 1200 - margin.left - margin.right;
   const height = innerHeight;
+
+  // Gesamtbreite inkl. rechter Metrik-Spalte (ohne „voll“ in HTML rumzuspielen)
+  const fullWidth = width + (margin.right - 18);
 
   svg.attr(
     "viewBox",
     `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`
   );
-
-  svg.selectAll("*").remove();
 
   const g = svg.append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
@@ -137,7 +139,7 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
   g.append("rect")
     .attr("x", 0)
     .attr("y", 0)
-    .attr("width", width + (margin.right - 18))
+    .attr("width", fullWidth)
     .attr("height", height)
     .attr("fill", "none")
     .attr("stroke", "#cfd6e4")
@@ -153,7 +155,7 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
     .range([0, height])
     .padding(0.32);
 
-  // Gridlines (Likert 1–4)
+  // Gridlines
   g.append("g")
     .attr("class", "grid")
     .call(
@@ -167,14 +169,14 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
 
   g.select(".grid").selectAll("path").remove();
 
-  // Hintergrund-Bänder pro Basisdimension (dezent)
+  // Hintergrund-Bänder
   groupSpans.forEach((span, i) => {
     const yStart = y(span.startKey);
     const yEnd = y(span.endKey) + y.bandwidth();
     g.append("rect")
       .attr("x", 0)
       .attr("y", yStart - 8)
-      .attr("width", width + (margin.right - 18))
+      .attr("width", fullWidth)
       .attr("height", (yEnd - yStart) + 16)
       .attr("fill", i % 2 === 0 ? "#f7f9fe" : "#ffffff")
       .attr("opacity", 0.9)
@@ -182,11 +184,10 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
   });
 
   // Achsen
-  const xAxis = d3.axisBottom(x).ticks(4);
   g.append("g")
     .attr("class", "axis x-axis")
     .attr("transform", `translate(0,${height})`)
-    .call(xAxis);
+    .call(d3.axisBottom(x).ticks(4));
 
   const yAxis = d3.axisLeft(y)
     .tickSize(0)
@@ -197,7 +198,6 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
     .attr("class", "axis y-axis")
     .call(yAxis);
 
-  // Summenzeilen im y-Axis-Label fett
   yAxisG.selectAll(".tick text")
     .attr("fill", d => {
       const r = rows.find(x => x.key === d);
@@ -208,30 +208,12 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
       return (r && (r.rowType === "groupSummary" || r.rowType === "overallSummary")) ? 700 : 500;
     });
 
-  // Titel
-  g.append("text")
-    .attr("x", (width + (margin.right - 18)) / 2)
-    .attr("y", -26)
-    .attr("text-anchor", "middle")
-    .attr("fill", "#222")
-    .attr("font-size", "1rem")
-    .attr("font-weight", "700")
-    .text("Basisdimensionen zusammenfassung");
-
-  // Untertitel (was bedeutet der Plot)
-  g.append("text")
-    .attr("x", (width + (margin.right - 18)) / 2)
-    .attr("y", -7)
-    .attr("text-anchor", "middle")
-    .attr("fill", "#6b7280")
-    .attr("font-size", "0.82rem")
-    .text("Dumbbell-Plot: Mittelwerte Mensch vs. KI (1–4) je Item, inkl. Summenzeilen");
-
-  // Legende (zentriert)
+  // Header: Legende / Titel / Untertitel (sauber getrennt)
   const color = d3.scaleOrdinal()
     .domain(["human", "ki"])
     .range(["#2271b3", "#ff9800"]);
 
+  // Legende (zentriert über dem Plotbereich)
   const legend = g.append("g").attr("class", "legend");
   const legendData = [
     { key: "human", label: "Mensch" },
@@ -246,7 +228,7 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
 
   lg.append("circle")
     .attr("r", 6)
-    .attr("cy", -52)
+    .attr("cy", 0)
     .attr("cx", 0)
     .attr("fill", d => color(d.key))
     .attr("stroke", "#fff")
@@ -254,18 +236,37 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
 
   lg.append("text")
     .attr("x", 12)
-    .attr("y", -52)
+    .attr("y", 0)
     .attr("dominant-baseline", "middle")
     .attr("fill", "#2a2f3a")
     .text(d => d.label);
 
   const legendBox = legend.node().getBBox();
-  legend.attr("transform", `translate(${((width + (margin.right - 18)) - legendBox.width) / 2}, 0)`);
+  legend.attr("transform", `translate(${(width - legendBox.width) / 2}, -72)`);
 
-  // Spaltenkopf rechts (Metriken)
+  // Titel (Plot-zentriert)
+  g.append("text")
+    .attr("x", width / 2)
+    .attr("y", -44)
+    .attr("text-anchor", "middle")
+    .attr("fill", "#222")
+    .attr("font-size", "1rem")
+    .attr("font-weight", "700")
+    .text("Basisdimensionen-Zusammenfassung");
+
+  // Untertitel (links im Plotbereich, bewusst kürzer)
+  g.append("text")
+    .attr("x", 0)
+    .attr("y", -24)
+    .attr("text-anchor", "start")
+    .attr("fill", "#6b7280")
+    .attr("font-size", "0.80rem")
+    .text("Mittelwerte Mensch vs. KI (Likert 1–4) je Item, inkl. Summenzeilen");
+
+  // Kopf rechts (Metrik-Spalte) – hoch genug, damit keine Kollision
   g.append("text")
     .attr("x", width + 18)
-    .attr("y", -10)
+    .attr("y", -72)
     .attr("fill", "#6b7280")
     .attr("font-size", "0.78rem")
     .attr("font-weight", "600")
@@ -313,7 +314,6 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
     tooltip.style("opacity", 0);
   }
 
-  // Dumbbells
   const rowG = g.append("g").attr("class", "rows");
 
   // Verbindungslinie
@@ -330,7 +330,7 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
       .attr("stroke-width", d => (d.rowType === "groupSummary" || d.rowType === "overallSummary") ? 3.2 : 2.2)
       .attr("opacity", 0.85)
       .on("mouseover", (event, d) => showTooltip(event, d))
-      .on("mousemove", (event) => moveTooltip(event))
+      .on("mousemove", moveTooltip)
       .on("mouseout", hideTooltip);
 
   // Punkte: Mensch
@@ -346,7 +346,7 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.2)
       .on("mouseover", (event, d) => showTooltip(event, d))
-      .on("mousemove", (event) => moveTooltip(event))
+      .on("mousemove", moveTooltip)
       .on("mouseout", hideTooltip);
 
   // Punkte: KI
@@ -362,7 +362,7 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
       .attr("stroke", "#fff")
       .attr("stroke-width", 1.2)
       .on("mouseover", (event, d) => showTooltip(event, d))
-      .on("mousemove", (event) => moveTooltip(event))
+      .on("mousemove", moveTooltip)
       .on("mouseout", hideTooltip);
 
   // Rechte Metriken je Zeile
@@ -384,7 +384,7 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
         return `Δ=${diff} · gleich=${ident}% · MAD=${mad} · n=${d.nPairs}`;
       });
 
-  // Gruppenüberschriften links (in der Margin)
+  // Gruppenüberschriften
   groupSpans.forEach(span => {
     const firstY = y(span.startKey);
     g.append("text")
@@ -395,11 +395,10 @@ export function initBasisdimensionSummaryChart({ itemCompareData }) {
       .attr("font-weight", "700")
       .text(span.dim);
 
-    // Trennlinie nach der Summenzeile
     const endY = y(span.endKey) + y.bandwidth() + 10;
     g.append("line")
       .attr("x1", 0)
-      .attr("x2", width + (margin.right - 18))
+      .attr("x2", fullWidth)
       .attr("y1", endY)
       .attr("y2", endY)
       .attr("stroke", "#e1e7f3")

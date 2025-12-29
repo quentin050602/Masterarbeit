@@ -1,14 +1,16 @@
 // js/charts/compareChart.js
-// Forschungsfrage 2: Vergleich Mensch vs. KI auf Itemebene (Bar Chart)
-// Erwartet: itemCompareData (Array), basisdimensionen (Array)
+// Forschungsfrage 2: Vergleich Mensch vs. KI auf Itemebene (Punkteplot)
+// Erwartet: itemCompareData (Array), itemEignungData (Array), basisdimensionen (Array)
 // Nutzt globales d3 (wird in index.html geladen).
 
 export function initCompareChart({ itemCompareData, itemEignungData, basisdimensionen }) {
   const svg = d3.select("#svg-compare");
+  if (svg.empty()) return;
+
   const tooltip = d3.select("#tooltip");
 
-  // Falls dieses Chart auf einer Seite ohne das SVG gerendert wird, sauber abbrechen
-  if (svg.empty()) return;
+  // Reset (wichtig, falls re-init)
+  svg.selectAll("*").remove();
 
   const margin = { top: 50, right: 40, bottom: 80, left: 70 };
   const width = 1200 - margin.left - margin.right;
@@ -22,16 +24,15 @@ export function initCompareChart({ itemCompareData, itemEignungData, basisdimens
   const g = svg.append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-// Einheitlicher Rahmen (Plot-Frame)
-g.append("rect")
-  .attr("x", 0)
-  .attr("y", 0)
-  .attr("width", width)
-  .attr("height", height)
-  .attr("fill", "none")
-  .attr("stroke", "#cfd6e4")
-  .attr("stroke-width", 1);
-
+  // Rahmen
+  g.append("rect")
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", "none")
+    .attr("stroke", "#cfd6e4")
+    .attr("stroke-width", 1);
 
   const xScale = d3.scalePoint()
     .range([0, width])
@@ -80,73 +81,69 @@ g.append("rect")
     .attr("font-size", "1rem")
     .attr("font-weight", "600");
 
-// Legende (zentriert, horizontal)
-const legendData = [
-  { key: "human", label: "Mensch" },
-  { key: "ki", label: "KI" }
-];
+  // Legende (zentriert)
+  const legendData = [
+    { key: "human", label: "Mensch" },
+    { key: "ki", label: "KI" }
+  ];
 
-const legend = g.append("g")
-  .attr("class", "legend");
+  const legend = g.append("g").attr("class", "legend");
 
-const lgGroups = legend.selectAll("g")
-  .data(legendData)
-  .enter()
-  .append("g")
-    .attr("transform", (d, i) => `translate(${i * 120}, 0)`);
+  const lgGroups = legend.selectAll("g")
+    .data(legendData)
+    .enter()
+    .append("g")
+      .attr("transform", (d, i) => `translate(${i * 120}, 0)`);
 
-lgGroups.append("rect")
-  .attr("width", 12)
-  .attr("height", 12)
-  .attr("y", -10)
-  .attr("rx", 3)
-  .attr("fill", d => colorScale(d.key));
+  lgGroups.append("rect")
+    .attr("width", 12)
+    .attr("height", 12)
+    .attr("y", -10)
+    .attr("rx", 3)
+    .attr("fill", d => colorScale(d.key));
 
-lgGroups.append("text")
-  .attr("x", 18)
-  .attr("y", 0)
-  .attr("dominant-baseline", "middle")
-  .attr("fill", "#2a2f3a")
-  .text(d => d.label);
+  lgGroups.append("text")
+    .attr("x", 18)
+    .attr("y", 0)
+    .attr("dominant-baseline", "middle")
+    .attr("fill", "#2a2f3a")
+    .text(d => d.label);
 
-const legendBox = legend.node().getBBox();
-legend.attr("transform", `translate(${(width - legendBox.width) / 2}, -40)`);
+  const legendBox = legend.node().getBBox();
+  legend.attr("transform", `translate(${(width - legendBox.width) / 2}, -40)`);
 
-const dotsHumanGroup = g.append("g").attr("class", "dots-human");
+  const dotsHumanGroup = g.append("g").attr("class", "dots-human");
   const dotsKiGroup = g.append("g").attr("class", "dots-ki");
 
   const dimSelect = document.getElementById("dim-select-compare");
-  let currentDimension = basisdimensionen[0];
+  let currentDimension = basisdimensionen?.[0] ?? "";
 
-  basisdimensionen.forEach(dim => {
+  // Dropdown füllen
+  dimSelect.innerHTML = "";
+  (basisdimensionen || []).forEach(dim => {
     const opt = document.createElement("option");
     opt.value = dim;
     opt.textContent = dim;
     dimSelect.appendChild(opt);
   });
 
-  dimSelect.addEventListener("change", () => {
-    updateChart(dimSelect.value);
-  });
-
+  dimSelect.addEventListener("change", () => updateChart(dimSelect.value));
   document.getElementById("toggle-human").addEventListener("change", applyVisibility);
   document.getElementById("toggle-ki").addEventListener("change", applyVisibility);
 
   const filterSuitableCheckbox = document.getElementById("filter-suitable");
-  filterSuitableCheckbox.addEventListener("change", () => {
-    updateChart(currentDimension);
-  });
+  filterSuitableCheckbox.addEventListener("change", () => updateChart(currentDimension));
 
   function updateChart(selectedDimension) {
     currentDimension = selectedDimension;
 
     let dimData = itemCompareData.filter(d => d.basisdimension === selectedDimension);
 
+    // Filter: nur Items ohne "nicht geeignet" (robust, falls itemEignungData fehlt)
     const filterSuitable = filterSuitableCheckbox.checked;
     if (filterSuitable) {
-      // itemEignungData wird aus app.js übergeben (nicht als globale Variable voraussetzen).
       if (!Array.isArray(itemEignungData)) {
-        console.warn("[compareChart] itemEignungData fehlt – Filter 'nur geeignete Items' wird ignoriert.");
+        console.warn("[compareChart] itemEignungData fehlt – Filter wird ignoriert.");
       } else {
         const suitableItems = itemEignungData
           .filter(d => d.basisdimension === selectedDimension && d.notSuitable === 0)
@@ -183,7 +180,7 @@ const dotsHumanGroup = g.append("g").attr("class", "dots-human");
         .attr("cx", d => xScale(d.itemCode) - 10)
         .attr("cy", d => yScale(d.meanHuman))
         .on("mouseover", (event, d) => showTooltip(event, d, "human"))
-        .on("mousemove", (event, d) => moveTooltip(event))
+        .on("mousemove", moveTooltip)
         .on("mouseout", hideTooltip)
       .merge(humanDots)
         .transition()
@@ -204,7 +201,7 @@ const dotsHumanGroup = g.append("g").attr("class", "dots-human");
         .attr("cx", d => xScale(d.itemCode) + 10)
         .attr("cy", d => yScale(d.meanKI))
         .on("mouseover", (event, d) => showTooltip(event, d, "ki"))
-        .on("mousemove", (event, d) => moveTooltip(event))
+        .on("mousemove", moveTooltip)
         .on("mouseout", hideTooltip)
       .merge(kiDots)
         .transition()
@@ -218,7 +215,6 @@ const dotsHumanGroup = g.append("g").attr("class", "dots-human");
   }
 
   function showTooltip(event, d, type) {
-    const tooltip = d3.select("#tooltip");
     const human = d.meanHuman.toFixed(2);
     const ki = d.meanKI.toFixed(2);
     const diff = (d.meanKI - d.meanHuman).toFixed(2);
@@ -243,27 +239,22 @@ const dotsHumanGroup = g.append("g").attr("class", "dots-human");
   }
 
   function moveTooltip(event) {
-    d3.select("#tooltip")
+    tooltip
       .style("left", (event.pageX + 12) + "px")
       .style("top", (event.pageY - 28) + "px");
   }
 
   function hideTooltip() {
-    d3.select("#tooltip").style("opacity", 0);
+    tooltip.style("opacity", 0);
   }
 
   function applyVisibility() {
     const showHuman = document.getElementById("toggle-human").checked;
     const showKi = document.getElementById("toggle-ki").checked;
-
     d3.selectAll(".dot-human").classed("hidden", !showHuman);
     d3.selectAll(".dot-ki").classed("hidden", !showKi);
   }
 
+  // Initial
   updateChart(basisdimensionen[0]);
 }
-
-// --------------------------------------------------------
-// 3) Forschungsfrage 1 – Indikator-Heatmap (Pixelvisualisierung)
-//    x = Position des Indikators im Item, y = Item
-// --------------------------------------------------------

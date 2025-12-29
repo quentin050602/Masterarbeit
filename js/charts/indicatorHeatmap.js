@@ -1,18 +1,18 @@
 // js/charts/indicatorHeatmap.js
 // Forschungsfrage 3: Indikatoren (Heatmap)
-// Erwartet: indicatorData (Array), basisdimensionen (Array)
+// Erwartet: indicatorData (Array), itemEignungData (Array|optional), basisdimensionen (Array)
 // Nutzt globales d3 (wird in index.html geladen).
 
 export function initIndicatorHeatmap({ indicatorData, itemEignungData, basisdimensionen }) {
-  if (typeof indicatorData === "undefined" || indicatorData.length === 0) {
-    return;
-  }
+  if (!Array.isArray(indicatorData) || indicatorData.length === 0) return;
 
   const svg = d3.select("#svg-indikatoren");
+  if (svg.empty()) return;
+
   const tooltip = d3.select("#tooltip");
 
-  // Falls dieses Chart auf einer Seite ohne das SVG gerendert wird, sauber abbrechen
-  if (svg.empty()) return;
+  // Reset
+  svg.selectAll("*").remove();
 
   const margin = { top: 50, right: 180, bottom: 80, left: 80 };
   const width = 1200 - margin.left - margin.right;
@@ -26,19 +26,17 @@ export function initIndicatorHeatmap({ indicatorData, itemEignungData, basisdime
   const g = svg.append("g")
     .attr("transform", `translate(${margin.left},${margin.top})`);
 
-// Einheitlicher Rahmen (Plot-Frame)
-g.append("rect")
-  .attr("x", 0)
-  .attr("y", 0)
-  .attr("width", width)
-  .attr("height", height)
-  .attr("fill", "none")
-  .attr("stroke", "#cfd6e4")
-  .attr("stroke-width", 1);
+  // Rahmen
+  g.append("rect")
+    .attr("x", 0)
+    .attr("y", 0)
+    .attr("width", width)
+    .attr("height", height)
+    .attr("fill", "none")
+    .attr("stroke", "#cfd6e4")
+    .attr("stroke-width", 1);
 
-
-  // Items (Zeilen) in der Reihenfolge aus itemEignungData (wird aus app.js übergeben).
-  // Fallback: Reihenfolge aus den Indikatoren ableiten.
+  // Item-Reihenfolge: bevorzugt aus itemEignungData, sonst aus indicatorData
   const itemOrder = Array.isArray(itemEignungData)
     ? itemEignungData.map(d => d.itemCode)
     : Array.from(new Set(indicatorData.map(d => d.itemCode)));
@@ -47,15 +45,15 @@ g.append("rect")
   const processedIndicators = [];
   const byItem = d3.group(indicatorData, d => d.itemCode);
 
-  byItem.forEach((list, itemCode) => {
+  byItem.forEach((list) => {
     list.sort((a, b) => Number(a.indicatorId) - Number(b.indicatorId));
     list.forEach((d, i) => {
-      d.colIndex = i + 1; // 1,2,3,... innerhalb des Items
+      d.colIndex = i + 1;
       processedIndicators.push(d);
     });
   });
 
-  const maxCols = d3.max(processedIndicators, d => d.colIndex);
+  const maxCols = d3.max(processedIndicators, d => d.colIndex) || 1;
 
   const xScale = d3.scaleBand()
     .domain(d3.range(1, maxCols + 1).map(String))
@@ -67,7 +65,7 @@ g.append("rect")
     .range([0, height])
     .padding(0.05);
 
-  // Farbskala für Anteil 99 – 5 Klassen, passend zur Legende
+  // Farbskala für Anteil 99 – 5 Klassen
   const thresholds = [5, 15, 30, 50];
   const colorRange = [
     "#e8f5e9", // <5 %
@@ -88,7 +86,6 @@ g.append("rect")
   const yAxisGroup = g.append("g")
     .attr("class", "axis y-axis");
 
-  // Achsenticks und -beschriftungen
   xAxisGroup.call(d3.axisBottom(xScale));
   xAxisGroup.selectAll("text")
     .attr("text-anchor", "middle")
@@ -114,27 +111,21 @@ g.append("rect")
     .attr("font-size", "0.9rem")
     .text("Items");
 
-  const chartTitle = g.append("text")
+  g.append("text")
     .attr("x", width / 2)
     .attr("y", -15)
     .attr("text-anchor", "middle")
     .attr("fill", "#222")
     .attr("font-size", "1rem")
     .attr("font-weight", "600")
-    .text("Alle Indikatoren – Pixel-Heatmap nach Item und Indikator");
+    .text("Alle Indikatoren – Heatmap nach Item und Indikator");
 
-  // Legende für Farbe (Anteil 99)
+  // Legende
   const legendColor = g.append("g")
     .attr("class", "legend legend-color")
     .attr("transform", `translate(${width + 20}, 10)`);
 
-  const colorLabels = [
-    "<5 %",
-    "5–<15 %",
-    "15–<30 %",
-    "30–<50 %",
-    "≥50 %"
-  ];
+  const colorLabels = ["<5 %", "5–<15 %", "15–<30 %", "30–<50 %", "≥50 %"];
 
   legendColor.append("text")
     .attr("x", 0)
@@ -162,7 +153,7 @@ g.append("rect")
     .attr("y", 2)
     .text(d => d);
 
-  // Heatmap-Zellen – einheitlicher Rahmen
+  // Zellen
   g.selectAll("rect.heat-cell")
     .data(processedIndicators, d => d.itemCode + "-" + d.indicatorId)
     .enter()
@@ -194,14 +185,5 @@ g.append("rect")
           .style("left", (event.pageX + 12) + "px")
           .style("top", (event.pageY - 28) + "px");
       })
-      .on("mouseout", () => {
-        tooltip.style("opacity", 0);
-      });
+      .on("mouseout", () => tooltip.style("opacity", 0));
 }
-
-
-// --------------------------------------------------------
-// 4) Item-Scores pro Beobachtung (Grouped Bar Chart: KI vs Mensch)
-// Auswahl: Item (KA1..KA4, KU1..KU4, SK1..SK3)
-// Pro Item: bis zu 18 Beobachtungen (z.B. Transkripte). 99 (n.b.) wird rausgefiltert.
-// --------------------------------------------------------
