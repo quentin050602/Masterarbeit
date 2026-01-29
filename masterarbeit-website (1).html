@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KI-gestützte Unterrichtsanalyse – Masterarbeit</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-100 min-h-screen">
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState } = React;
+
+        function MasterarbeitWebsite() {
+            const [activeTab, setActiveTab] = useState('overview');
+
+            // Daten für Visualisierungen
+            const dimensionData = {
+                labels: ['SK', 'KA', 'KU'],
+                identisch: [54.7, 44.1, 21.7],
+                mad: [0.42, 0.49, 0.89]
+            };
+
+            const itemData = {
+                SK: [
+                    { item: 'SK1', identisch: 94.4, mad: 0.03, eignung: 0.86 },
+                    { item: 'SK2', identisch: 0.0, mad: 0.97, eignung: 0.35 },
+                    { item: 'SK3', identisch: 70.6, mad: 0.26, eignung: 0.82 }
+                ],
+                KA: [
+                    { item: 'KA1', identisch: 61.1, mad: 0.31, eignung: 1.00 },
+                    { item: 'KA2', identisch: 41.2, mad: 0.50, eignung: 0.94 },
+                    { item: 'KA3', identisch: 31.3, mad: 0.59, eignung: 1.00 },
+                    { item: 'KA4', identisch: 41.2, mad: 0.56, eignung: 0.80 }
+                ],
+                KU: [
+                    { item: 'KU1', identisch: 5.9, mad: 1.50, eignung: 1.00 },
+                    { item: 'KU2', identisch: 41.2, mad: 0.47, eignung: 0.89 },
+                    { item: 'KU3', identisch: 5.9, mad: 0.94, eignung: 0.83 },
+                    { item: 'KU4', identisch: 33.3, mad: 0.67, eignung: 0.82 }
+                ]
+            };
+
+            React.useEffect(() => {
+                if (activeTab === 'results') {
+                    setTimeout(renderCharts, 100);
+                }
+            }, [activeTab]);
+
+            function renderCharts() {
+                // Chart 1: Übereinstimmung nach Basisdimension
+                const ctx1 = document.getElementById('chart1');
+                if (ctx1 && !ctx1.chartInstance) {
+                    ctx1.chartInstance = new Chart(ctx1, {
+                        type: 'bar',
+                        data: {
+                            labels: dimensionData.labels,
+                            datasets: [{
+                                label: 'Identische Bewertungen (%)',
+                                data: dimensionData.identisch,
+                                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'],
+                                borderColor: ['#059669', '#2563eb', '#d97706'],
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: true },
+                                title: {
+                                    display: true,
+                                    text: 'Übereinstimmung nach Basisdimension',
+                                    font: { size: 16, weight: 'bold' }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 100,
+                                    title: { display: true, text: 'Prozent (%)' }
+                                }
+                            }
+                        }
+                    });
+                }
+
+                // Chart 2: MAD nach Basisdimension
+                const ctx2 = document.getElementById('chart2');
+                if (ctx2 && !ctx2.chartInstance) {
+                    ctx2.chartInstance = new Chart(ctx2, {
+                        type: 'bar',
+                        data: {
+                            labels: dimensionData.labels,
+                            datasets: [{
+                                label: 'Mittlere absolute Abweichung (MAD)',
+                                data: dimensionData.mad,
+                                backgroundColor: ['#10b981', '#3b82f6', '#f59e0b'],
+                                borderColor: ['#059669', '#2563eb', '#d97706'],
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            plugins: {
+                                legend: { display: true },
+                                title: {
+                                    display: true,
+                                    text: 'Abweichung nach Basisdimension',
+                                    font: { size: 16, weight: 'bold' }
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    max: 1.0,
+                                    title: { display: true, text: 'MAD (Skalenpunkte)' }
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+
+            const tabs = [
+                { id: 'overview', label: 'Überblick', icon: '🎯' },
+                { id: 'methods', label: 'Methoden', icon: '🔬' },
+                { id: 'results', label: 'Ergebnisse', icon: '📊' },
+                { id: 'discussion', label: 'Diskussion', icon: '💡' },
+                { id: 'download', label: 'Download', icon: '📥' }
+            ];
+
+            return (
+                <div className="min-h-screen py-8 px-4">
+                    <div className="max-w-6xl mx-auto">
+                        {/* Header */}
+                        <header className="bg-white rounded-2xl shadow-xl p-8 mb-8">
+                            <h1 className="text-4xl font-bold text-gray-800 mb-4">
+                                Eine Validierung KI-gestützter Videoanalysen zur Erfassung von Unterrichtsqualität im Wirtschaftsunterricht
+                            </h1>
+                            <p className="text-xl text-gray-600 mb-2">
+                                Masterarbeit von Quentin Weber
+                            </p>
+                            <p className="text-gray-500">
+                                Universität Konstanz • Wirtschaftswissenschaften • 2026
+                            </p>
+                        </header>
+
+                        {/* Navigation */}
+                        <nav className="bg-white rounded-2xl shadow-lg p-2 mb-8">
+                            <div className="flex flex-wrap gap-2">
+                                {tabs.map(tab => (
+                                    <button
+                                        key={tab.id}
+                                        onClick={() => setActiveTab(tab.id)}
+                                        className={`flex-1 min-w-fit px-6 py-3 rounded-xl font-semibold transition-all duration-300 ${
+                                            activeTab === tab.id
+                                                ? 'bg-indigo-600 text-white shadow-lg transform scale-105'
+                                                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                                        }`}
+                                    >
+                                        <span className="mr-2">{tab.icon}</span>
+                                        {tab.label}
+                                    </button>
+                                ))}
+                            </div>
+                        </nav>
+
+                        {/* Content */}
+                        <main className="bg-white rounded-2xl shadow-xl p-8">
+                            {activeTab === 'overview' && <OverviewTab />}
+                            {activeTab === 'methods' && <MethodsTab />}
+                            {activeTab === 'results' && <ResultsTab itemData={itemData} />}
+                            {activeTab === 'discussion' && <DiscussionTab />}
+                            {activeTab === 'download' && <DownloadTab />}
+                        </main>
+                    </div>
+                </div>
+            );
+        }
+
+        function OverviewTab() {
+            return (
+                <div className="space-y-6">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-6">Überblick</h2>
+                    
+                    <div className="bg-indigo-50 border-l-4 border-indigo-600 p-6 rounded-lg">
+                        <h3 className="text-xl font-bold text-indigo-900 mb-3">Forschungsfragen</h3>
+                        <div className="space-y-3 text-gray-700 leading-relaxed">
+                            <p>
+                                <strong>(F1)</strong> Für welche Basisdimensionen, Items und Indikatoren des Unterrichtsfeedbackbogens 
+                                Tiefenstrukturen ist eine transkriptbasierte KI-Bewertung grundsätzlich geeignet und wo zeigen sich systematische Grenzen?
+                            </p>
+                            <p>
+                                <strong>(F2)</strong> In welchem Maße stimmen KI-gestützte, rein transkriptbasierte Bewertungen der Unterrichtsqualität 
+                                mit videobasierten Ratings geschulter menschlicher Rater*innen in den drei Basisdimensionen KA, KU und SK überein?
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div className="bg-blue-50 p-6 rounded-xl">
+                            <h3 className="text-lg font-bold text-blue-900 mb-3">🎯 Zielsetzung</h3>
+                            <p className="text-gray-700">
+                                Entwicklung eines automatisierten Workflows zur KI-gestützten 
+                                Erfassung von Unterrichtsqualität im Wirtschaftsunterricht
+                            </p>
+                        </div>
+                        
+                        <div className="bg-green-50 p-6 rounded-xl">
+                            <h3 className="text-lg font-bold text-green-900 mb-3">📚 Basisdimensionen</h3>
+                            <ul className="text-gray-700 space-y-2">
+                                <li>• <strong>KA</strong> – Kognitive Aktivierung</li>
+                                <li>• <strong>KU</strong> – Konstruktive Unterstützung</li>
+                                <li>• <strong>SK</strong> – Strukturierte Klassenführung</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="bg-amber-50 p-6 rounded-xl">
+                        <h3 className="text-lg font-bold text-amber-900 mb-3">🔑 Kernaussagen</h3>
+                        <ul className="space-y-3 text-gray-700">
+                            <li>✓ <strong>SK:</strong> Höchste Übereinstimmung (54,7% identisch, gewichtete MAD = 0,42) – jedoch mit starker Heterogenität</li>
+                            <li>✓ <strong>KA:</strong> Moderate Übereinstimmung (44,1% identisch, gewichtete MAD = 0,49) – sprachlich gut erfassbar</li>
+                            <li>✓ <strong>KU:</strong> Geringste Übereinstimmung (21,7% identisch, gewichtete MAD = 0,89) – nonverbale Aspekte fehlen</li>
+                            <li>⚠ Monitoring (SK2) zeigt klare Grenzen transkriptbasierter Analyse</li>
+                        </ul>
+                    </div>
+                </div>
+            );
+        }
+
+        function MethodsTab() {
+            return (
+                <div className="space-y-6">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-6">Methoden</h2>
+
+                    <div className="bg-purple-50 border-l-4 border-purple-600 p-6 rounded-lg">
+                        <h3 className="text-xl font-bold text-purple-900 mb-3">Forschungsdesign</h3>
+                        <p className="text-gray-700">
+                            Quantitative Validierungsstudie im Feld der videobasierten 
+                            Unterrichtsqualitätsforschung
+                        </p>
+                    </div>
+
+                    <div className="space-y-4">
+                        <div className="bg-white border-2 border-gray-200 p-6 rounded-xl">
+                            <h3 className="text-lg font-bold text-gray-800 mb-3">📹 Datengrundlage</h3>
+                            <ul className="space-y-2 text-gray-700">
+                                <li>• 4 Unterrichtsstunden Volkswirtschaftslehre (je ~90 Min.)</li>
+                                <li>• Berufliches Gymnasium, 12. Klasse, Baden-Württemberg</li>
+                                <li>• Aufgeteilt in 18 Segmente (je ~20 Min.)</li>
+                                <li>• Aufnahme: September/Oktober 2022</li>
+                            </ul>
+                        </div>
+
+                        <div className="bg-white border-2 border-gray-200 p-6 rounded-xl">
+                            <h3 className="text-lg font-bold text-gray-800 mb-3">🤖 KI-Workflow</h3>
+                            <div className="space-y-3">
+                                <div className="flex items-start gap-3">
+                                    <span className="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 font-bold">1</span>
+                                    <div>
+                                        <strong>Transkription:</strong> Automatische Transkription mit Whisper-Modell (OpenAI)
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <span className="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 font-bold">2</span>
+                                    <div>
+                                        <strong>KI-Bewertung:</strong> ChatGPT (GPT-5.1) über API bewertet anhand des IBBW-Feedbackbogens
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <span className="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 font-bold">3</span>
+                                    <div>
+                                        <strong>Automatisierung:</strong> Python-Skript generiert automatisch Ergebnistabellen
+                                    </div>
+                                </div>
+                                <div className="flex items-start gap-3">
+                                    <span className="bg-indigo-600 text-white rounded-full w-8 h-8 flex items-center justify-center flex-shrink-0 font-bold">4</span>
+                                    <div>
+                                        <strong>Vergleich:</strong> Systematischer Abgleich mit videobasierten menschlichen Ratings
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="bg-white border-2 border-gray-200 p-6 rounded-xl">
+                            <h3 className="text-lg font-bold text-gray-800 mb-3">📋 Beobachtungsinstrument</h3>
+                            <p className="text-gray-700 mb-3">
+                                <strong>Unterrichtsfeedbackbogen Tiefenstrukturen (IBBW)</strong>
+                            </p>
+                            <ul className="space-y-2 text-gray-700">
+                                <li>• 11 Items über 3 Basisdimensionen (KA, KU, SK)</li>
+                                <li>• Vierstufige Likert-Skala (1-4)</li>
+                                <li>• Positiv und negativ formulierte Indikatoren</li>
+                            </ul>
+                        </div>
+
+                        <div className="bg-white border-2 border-gray-200 p-6 rounded-xl">
+                            <h3 className="text-lg font-bold text-gray-800 mb-3">⚙️ KI-Kategorisierung</h3>
+                            <div className="space-y-4">
+                                <div>
+                                    <p className="font-semibold text-gray-800 mb-2">(F1) Indikatorbewertung:</p>
+                                    <div className="space-y-2">
+                                        <div className="flex items-center gap-3">
+                                            <span className="bg-green-500 text-white px-3 py-1 rounded-lg font-bold">0</span>
+                                            <span>Indikator kommt nicht vor</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="bg-blue-500 text-white px-3 py-1 rounded-lg font-bold">1</span>
+                                            <span>Indikator ist eindeutig erkennbar</span>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="bg-gray-500 text-white px-3 py-1 rounded-lg font-bold">99</span>
+                                            <span>Nicht beurteilbar (nonverbal/fehlende Information)</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <p className="font-semibold text-gray-800 mb-2">(F2) Globale Itembewertung:</p>
+                                    <div className="flex items-center gap-3">
+                                        <span className="bg-indigo-500 text-white px-3 py-1 rounded-lg font-bold">1-4</span>
+                                        <span>Vierstufige Likert-Skala</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function ResultsTab({ itemData }) {
+            const [selectedDimension, setSelectedDimension] = useState('SK');
+
+            return (
+                <div className="space-y-8">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-6">Ergebnisse</h2>
+
+                    {/* Charts */}
+                    <div className="grid md:grid-cols-2 gap-6">
+                        <div className="bg-white border-2 border-gray-200 p-6 rounded-xl">
+                            <canvas id="chart1" height="300"></canvas>
+                        </div>
+                        <div className="bg-white border-2 border-gray-200 p-6 rounded-xl">
+                            <canvas id="chart2" height="300"></canvas>
+                        </div>
+                    </div>
+
+                    {/* Dimension Selector */}
+                    <div>
+                        <h3 className="text-xl font-bold text-gray-800 mb-4">Detaillierte Item-Analyse</h3>
+                        <div className="flex gap-4 mb-6">
+                            {['SK', 'KA', 'KU'].map(dim => (
+                                <button
+                                    key={dim}
+                                    onClick={() => setSelectedDimension(dim)}
+                                    className={`px-6 py-3 rounded-lg font-bold transition-all ${
+                                        selectedDimension === dim
+                                            ? 'bg-indigo-600 text-white shadow-lg'
+                                            : 'bg-gray-200 text-gray-700 hover:bg-gray-300'
+                                    }`}
+                                >
+                                    {dim}
+                                </button>
+                            ))}
+                        </div>
+
+                        {/* Item Table */}
+                        <div className="overflow-x-auto">
+                            <table className="w-full border-collapse">
+                                <thead>
+                                    <tr className="bg-gray-100">
+                                        <th className="border border-gray-300 px-4 py-3 text-left font-bold">Item</th>
+                                        <th className="border border-gray-300 px-4 py-3 text-left font-bold">Identische Ratings (%)</th>
+                                        <th className="border border-gray-300 px-4 py-3 text-left font-bold">MAD</th>
+                                        <th className="border border-gray-300 px-4 py-3 text-left font-bold">Eignung</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {itemData[selectedDimension].map((item, idx) => (
+                                        <tr key={idx} className="hover:bg-gray-50">
+                                            <td className="border border-gray-300 px-4 py-3 font-semibold">{item.item}</td>
+                                            <td className="border border-gray-300 px-4 py-3">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="flex-1 bg-gray-200 rounded-full h-6 overflow-hidden">
+                                                        <div 
+                                                            className={`h-full ${
+                                                                item.identisch > 60 ? 'bg-green-500' :
+                                                                item.identisch > 30 ? 'bg-yellow-500' :
+                                                                'bg-red-500'
+                                                            }`}
+                                                            style={{ width: `${item.identisch}%` }}
+                                                        ></div>
+                                                    </div>
+                                                    <span className="font-semibold w-16 text-right">{item.identisch.toFixed(1)}%</span>
+                                                </div>
+                                            </td>
+                                            <td className="border border-gray-300 px-4 py-3">{item.mad.toFixed(2)}</td>
+                                            <td className="border border-gray-300 px-4 py-3">
+                                                <span className={`px-3 py-1 rounded-full text-white font-semibold ${
+                                                    item.eignung >= 0.9 ? 'bg-green-500' :
+                                                    item.eignung >= 0.7 ? 'bg-yellow-500' :
+                                                    'bg-red-500'
+                                                }`}>
+                                                    {item.eignung.toFixed(2)}
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    {/* Key Findings */}
+                    <div className="bg-gradient-to-r from-indigo-50 to-purple-50 border-2 border-indigo-200 p-6 rounded-xl">
+                        <h3 className="text-xl font-bold text-indigo-900 mb-4">🔍 Zentrale Befunde</h3>
+                        <div className="space-y-3 text-gray-700">
+                            <div className="flex items-start gap-3">
+                                <span className="text-green-600 font-bold text-xl">✓</span>
+                                <p><strong>SK1 (Störungen):</strong> Nahezu perfekte Passung (94,4% identisch, MAD 0,03)</p>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <span className="text-red-600 font-bold text-xl">✗</span>
+                                <p><strong>SK2 (Monitoring):</strong> Keine Übereinstimmung (0%, MAD 0,97) – klare Modalitätsgrenze</p>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <span className="text-yellow-600 font-bold text-xl">⚠</span>
+                                <p><strong>KU1 (Feedback):</strong> Trotz maximaler Eignung nur 5,9% Übereinstimmung – paraverbale Aspekte fehlen</p>
+                            </div>
+                            <div className="flex items-start gap-3">
+                                <span className="text-blue-600 font-bold text-xl">✓</span>
+                                <p><strong>KA:</strong> Am homogensten – vergleichsweise stabiles Muster über alle Items (MAD 0,31-0,59)</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function DiscussionTab() {
+            return (
+                <div className="space-y-6">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-6">Diskussion</h2>
+
+                    <div className="space-y-6">
+                        {/* SK Diskussion */}
+                        <div className="bg-green-50 border-l-4 border-green-600 p-6 rounded-lg">
+                            <h3 className="text-xl font-bold text-green-900 mb-3">
+                                Strukturierte Klassenführung (SK)
+                            </h3>
+                            <div className="space-y-3 text-gray-700">
+                                <p>
+                                    <strong>Stärken:</strong> SK1 (Störungen) und SK3 (Zeitnutzung) erreichen sehr hohe Übereinstimmungen, 
+                                    da verbale Störungen und Zeitverwendung im Transkript gut sichtbar sind.
+                                </p>
+                                <p>
+                                    <strong>Grenzen:</strong> SK2 (Monitoring) zeigt fundamentale Limitation – Raumpräsenz, 
+                                    Blickrichtung und präventives Verhalten sind ohne Video nicht erfassbar.
+                                </p>
+                                <p className="bg-white p-4 rounded border-l-4 border-green-500">
+                                    💡 <strong>Implikation:</strong> Für vollständige SK-Erfassung sind multimodale Ansätze 
+                                    (Video + Blickrichtungsanalyse) notwendig.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* KA Diskussion */}
+                        <div className="bg-blue-50 border-l-4 border-blue-600 p-6 rounded-lg">
+                            <h3 className="text-xl font-bold text-blue-900 mb-3">
+                                Kognitive Aktivierung (KA)
+                            </h3>
+                            <div className="space-y-3 text-gray-700">
+                                <p>
+                                    <strong>Stärken:</strong> Angebotsseite (herausfordernde Fragen, Verständnisorientierung) 
+                                    ist sprachlich gut erfassbar – moderate bis hohe Übereinstimmung.
+                                </p>
+                                <p>
+                                    <strong>Grenzen:</strong> Nutzungsseite (Engagement der SuS) schwerer beurteilbar, 
+                                    da nonverbale Signale (Mimik, Körperspannung) fehlen.
+                                </p>
+                                <p className="bg-white p-4 rounded border-l-4 border-blue-500">
+                                    💡 <strong>Implikation:</strong> Kombination aus Transkriptanalyse + Unterrichtsartefakten 
+                                    + Selbstberichte der SuS könnte Erfassung verbessern.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* KU Diskussion */}
+                        <div className="bg-amber-50 border-l-4 border-amber-600 p-6 rounded-lg">
+                            <h3 className="text-xl font-bold text-amber-900 mb-3">
+                                Konstruktive Unterstützung (KU)
+                            </h3>
+                            <div className="space-y-3 text-gray-700">
+                                <p>
+                                    <strong>Stärken:</strong> KU2 (individuelle Unterstützung) zeigt moderate Passung, 
+                                    da Scaffolding-Prozesse sprachlich sichtbar sind.
+                                </p>
+                                <p>
+                                    <strong>Grenzen (emotional-motivational):</strong> Wertschätzung und Klassenklima 
+                                    stark von Tonfall, Mimik und Gestik abhängig – im Transkript unsichtbar.
+                                </p>
+                                <p>
+                                    <strong>Grenzen (methodisch-didaktisch):</strong> Feedback-Qualität ist zwar sprachlich erfassbar, 
+                                    aber affektive Komponenten (Tonfall, Ironie) bleiben verborgen und beeinflussen die Bewertung erheblich.
+                                </p>
+                                <p className="bg-white p-4 rounded border-l-4 border-amber-500">
+                                    💡 <strong>Implikation:</strong> Automatisierte Prosodieanalyse (Tonfall, Betonung, Sprechtempo) 
+                                    könnte affektive Nuancen zugänglich machen.
+                                </p>
+                            </div>
+                        </div>
+
+                        {/* Methodische Limitationen */}
+                        <div className="bg-red-50 border-l-4 border-red-600 p-6 rounded-lg">
+                            <h3 className="text-xl font-bold text-red-900 mb-3">⚠ Methodische Limitationen</h3>
+                            <ul className="space-y-2 text-gray-700">
+                                <li>• <strong>Audio-Setup:</strong> Nur Lehrkraft mit Mikrofon → SuS-Beiträge unterrepräsentiert</li>
+                                <li>• <strong>Segmentierung:</strong> 20-Min-Blöcke → mögliche Kontextbrüche</li>
+                                <li>• <strong>Instrument:</strong> Unausgeglichene Indikatoren → systematische Bias-Muster</li>
+                                <li>• <strong>Referenzstandard:</strong> Mögliche Anzahl identischer Paare war durch die aggregierten menschlichen Ratings beschränkt (D</li>
+                                <li>• <strong>Black-Box-Problem:</strong> Intransparenz des LLM erschwert Nachvollziehbarkeit</li>
+                            </ul>
+                        </div>
+
+                        {/* Ausblick */}
+                        <div className="bg-purple-50 border-l-4 border-purple-600 p-6 rounded-lg">
+                            <h3 className="text-xl font-bold text-purple-900 mb-3">🚀 Ausblick</h3>
+                            <div className="space-y-3 text-gray-700">
+                                <p><strong>Multimodale Integration:</strong></p>
+                                <ul className="list-disc ml-6 space-y-1">
+                                    <li>Video-Analyse für Monitoring (Raumpräsenz, Blickrichtung)</li>
+                                    <li>Prosodieanalyse für emotionale Unterstützung (Tonfall, Betonung)</li>
+                                    <li>Unterrichtsartefakte für kognitives Potenzial</li>
+                                </ul>
+                                <p className="mt-4"><strong>Weiterentwicklung:</strong></p>
+                                <ul className="list-disc ml-6 space-y-1">
+                                    <li>Fachspezifische Beobachtungsinstrumente für Wirtschaftsunterricht</li>
+                                    <li>KI-optimierte Indikatorformulierungen</li>
+                                    <li>Robustheitschecks durch mehrfache Durchläufe</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function DownloadTab() {
+            return (
+                <div className="space-y-6">
+                    <h2 className="text-3xl font-bold text-gray-800 mb-6">Download</h2>
+
+                    <div className="bg-gradient-to-r from-indigo-100 to-purple-100 p-8 rounded-xl text-center">
+                        <div className="mb-6">
+                            <div className="text-6xl mb-4">📦</div>
+                            <h3 className="text-2xl font-bold text-gray-800 mb-2">
+                                Erweiterter Anhang
+                            </h3>
+                            <p className="text-gray-600">
+                                Zusätzliche Materialien, Daten und Analysen zur Masterarbeit
+                            </p>
+                        </div>
+
+                        <a
+                            href="Anhang.zip"
+                            download
+                            className="inline-block bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-4 px-8 rounded-xl shadow-lg transition-all transform hover:scale-105"
+                        >
+                            📥 Anhang.zip herunterladen
+                        </a>
+
+                        <div className="mt-8 text-sm text-gray-600">
+                            <p>Der erweiterte Anhang enthält:</p>
+                            <ul className="mt-2 space-y-1">
+                                <li>✓ Python-Skripte für die KI-Analyse</li>
+                                <li>✓ Vollständige Ergebnistabellen</li>
+                                <li>✓ Detaillierte Indikatoranalysen</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="bg-blue-50 border-2 border-blue-200 p-6 rounded-xl">
+                        <h3 className="text-xl font-bold text-blue-900 mb-3">📄 Vollständige Masterarbeit</h3>
+                        <p className="text-gray-700 mb-4">
+                            Diese Website bietet eine kompakte Übersicht. Für den vollständigen theoretischen 
+                            Hintergrund, detaillierte Methodenbeschreibung und ausführliche Literaturverweise 
+                            konsultieren Sie bitte die vollständige Masterarbeit.
+                        </p>
+                        <a
+                            href="Masterarbeit_Digital_Final.pdf"
+                            download
+                            className="inline-block bg-blue-600 hover:bg-blue-700 text-white font-semibold py-3 px-6 rounded-lg shadow transition-all transform hover:scale-105"
+                        >
+                            📄 Vollständige Masterarbeit herunterladen (PDF)
+                        </a>
+                    </div>
+                </div>
+            );
+        }
+
+        // Render App
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<MasterarbeitWebsite />);
+    </script>
+</body>
+</html>
